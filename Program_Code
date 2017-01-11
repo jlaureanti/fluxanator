@@ -1,0 +1,256 @@
+int ledPins[] = {5, 6, 9, 10, 11};
+
+int ind1;
+int ind2;
+int ind3;
+int ind4;
+int ind5;
+int ind6;
+int ind7;
+int ind8;
+int ind9;
+int ind10;
+int ind11;
+int ind12;
+int ind13;
+int lightOnTime;
+int lightOffTime;
+int cycleNum;
+int step1;
+int step2;
+int step3;
+int step4;
+int step5;
+int step6;
+int step7;
+int step8;
+int step9;
+int step10;
+int nextStep;
+int lightSteps;
+int cycleActual;
+int bright;
+int lLight;
+int wm2;
+int microE;
+int index;
+String timeNow;
+
+long highOn;
+long lowOn;
+
+String readString;
+String onDuration;
+String offDuration;
+String repeats;
+String high1;
+String high2;
+String high3;
+String high4;
+String high5;
+String high6;
+String high7;
+String high8;
+String high9;
+String high10;
+
+char b;
+
+void setup() {
+  int index;
+  for (index = 0; index <= 3; index++)
+  {
+    pinMode(ledPins[index], OUTPUT);
+  }
+  Serial.begin(9600);
+
+  Serial.println("Welcome to The Fluxanator");
+  Serial.println("Lets get fluxing!");
+  Serial.println("@ = Set high and low flux");
+  Serial.println("# = Constant light flux");
+  Serial.println("& = Clears all inputs");
+}
+
+void loop() {
+  startScreen();  
+}
+
+void startScreen() {
+  while (Serial.available() > 0) {
+    b = Serial.read();
+    if (b == '@') {
+      userDefined();
+    }
+    if (b == '#') {
+      constantFlux();
+    }
+    if (b == '&') {
+      clearAll();
+    }
+    else {
+      readString += b; //makes the string readString
+    }
+  }
+}
+
+void userDefined() {
+  Serial.println(); Serial.println("User enters light on duration (s), light off duration (s), repeats (#),");
+  Serial.println(" up to 10 high light values separated by commas and terminated with *");
+  Serial.println("3660 (time in seconds), 3660 (time in seconds), 3 (each high light exposure completed in triplicate),1,2,3,4,5,6,7,8,9,10*");
+  //expect a string like "high power, high duration,low power, low duration, cycles, power decrease*"
+  while (true) {
+    while (Serial.available() > 0)  {
+      char b = Serial.read();  //gets one byte from serial buffer
+      if (b == '*') {
+        Serial.println(); Serial.print("captured String is : ");
+        Serial.println(readString); //prints string to serial port out
+
+        ind1 = readString.indexOf(',');  //finds location of first ,
+        onDuration = readString.substring(0, ind1);   //captures first data String
+        ind2 = readString.indexOf(',', ind1 + 1 ); //finds location of second ,
+        offDuration = readString.substring(ind1 + 1, ind2 + 1); //captures second data String
+        ind3 = readString.indexOf(',', ind2 + 1 );
+        repeats = readString.substring(ind2 + 1, ind3 + 1);
+        ind4 = readString.indexOf(',', ind3 + 1 );
+        high1 = readString.substring(ind3 + 1, ind4 + 1);
+        ind5 = readString.indexOf(',', ind4 + 1 );
+        high2 = readString.substring(ind4 + 1, ind5 + 1);
+        ind6 = readString.indexOf(',', ind5 + 1 );
+        high3 = readString.substring(ind5 + 1, ind6 + 1);
+        ind7 = readString.indexOf(',', ind6 + 1 );
+        high4 = readString.substring(ind6 + 1, ind7 + 1);
+        ind8 = readString.indexOf(',', ind7 + 1 );
+        high5 = readString.substring(ind7 + 1, ind8 + 1);
+        ind9 = readString.indexOf(',', ind8 + 1 );
+        high6 = readString.substring(ind8 + 1, ind9 + 1);
+        ind10 = readString.indexOf(',', ind9 + 1 );
+        high7 = readString.substring(ind9 + 1, ind10 + 1);
+        ind11 = readString.indexOf(',', ind10 + 1 );
+        high8 = readString.substring(ind10 + 1, ind11 + 1);
+        ind12 = readString.indexOf(',', ind11 + 1 );
+        high9 = readString.substring(ind11 + 1, ind12 + 1);
+        ind13 = readString.indexOf(',', ind12 + 1 );
+        high10 = readString.substring(ind12 + 1); //captures remain part of data after last ,
+       
+        lightOnTime = onDuration.toInt(); lightOffTime = offDuration.toInt(); cycleNum = repeats.toInt(); 
+        step1 = high1.toInt(); step2 = high2.toInt(); step3 = high3.toInt(); step4 = high4.toInt(); step5 = high5.toInt();
+        step6 = high6.toInt(); step7 = high7.toInt(); step8 = high8.toInt(); step9 = high9.toInt(); step10 = high10.toInt();
+        
+        chooseHigh();
+      }
+      else {
+        readString += b; //makes the string readString
+      }
+    }
+  }
+}
+
+void chooseHigh() {
+  int nextStep = 0;
+  int lightSteps[] = {step1, step2, step3, step4, step5, step6, step7, step8, step9, step10};
+
+  while (nextStep <= 10) {
+  
+    int cycleActual = 0;
+    highOn = lightOnTime * 1000L;
+    lowOn = lightOffTime * 1000L;
+    
+    while (cycleActual < cycleNum) {
+      int index; //array index for lights
+      int hPosition; //array for high light value
+      int runningLight = (lightSteps[nextStep]);
+      // Convert writeValue to lightIntensity
+      int wm2 = (((340. / 100.) * runningLight) + (627. / 100.));
+      // Convert writeValue to lightIntensity
+      int microE = ((2219. / 100.) * runningLight) + (4090. / 100.);
+      int wm2_low = (1017. / 2500.) * lLight; // Convert writeValue to lightIntensity
+      int microE_low = (780.) * wm2_low * (209. / 25000.); // Convert writeValue to lightIntensity
+
+      Serial.print("WV= "); Serial.print(runningLight); Serial.print(" W/m2= "); Serial.print(wm2); Serial.print(" uE= "); Serial.print(microE);
+      Serial.print(" Time(s)= "); Serial.print(millis() / 1000); Serial.println();
+
+      for (index = 0; index <= 5; index++) // setup lights
+      {
+        analogWrite(ledPins[index], runningLight);
+      };
+
+      delay(highOn); // Pause for cycle
+
+      Serial.print("W/m2= "); Serial.print(wm2_low); Serial.print(" uE= "); Serial.print(microE_low);
+      Serial.print(" Time(s)= "); Serial.print(millis() / 1000); Serial.println();
+
+      for (index = 0; index <= 5; index++) // setup lights
+      {
+        analogWrite(ledPins[index], 0);
+      };
+
+      delay(lowOn);  // Pause for cycle
+      cycleActual++; // add another cycle
+    }
+  nextStep++;
+  }
+  clearAll(); // clear all variables, should reset, but doesn't
+  startScreen(); // clear all variables, should reset, but doesn't
+}
+
+void constantFlux()
+{
+  Serial.println(""); Serial.println("Control brightness (0-255),"); Serial.println("then click [send] or press [return]"); Serial.println();  // Print a blank line
+
+  // In order to type out the above message only once,
+  // we'll run the rest of this function in an infinite loop:
+  while (true) // "true" is always true, so this will loop forever.
+  {
+    // First we check to see if incoming data is available:
+    while (Serial.available() > 0)
+    {
+      // If it is, we'll use parseInt() to pull out any numbers:
+      bright = Serial.parseInt();
+      // Because analogWrite() only works with numbers from
+      // 0 to 255, we'll be sure the input is in that range:
+      bright = constrain(bright, 0, 256);
+      // print message to let you know that the
+      // number was received:
+      Serial.println("");
+      Serial.print("Setting write value to "); Serial.println(bright);
+      for (index = 0; index <= 5; index++)
+      {
+        // Set the brightness from serial to LEDs
+        analogWrite(ledPins[index], bright);
+      }
+
+      int wm2 = (((340. / 100.) * bright) + (627. / 100.)); // Convert writeValue to lightIntensity
+      int microE = ((2219. / 100.) * bright) + (4090. / 100.) ; // Convert writeValue to lightIntensity
+
+      Serial.print("WV= "); Serial.print(bright); Serial.print(" microE= "); Serial.print(microE); 
+      Serial.print(" Time(s)= "); Serial.print(millis() / 1000);
+      Serial.println();
+
+    }
+  }
+  clearAll();
+  startScreen();
+}
+
+void clearAll() {
+  Serial.println("Here's the clear that shit app");
+  readString = "*"; //clears variable for new input
+  onDuration = ""; 
+  offDuration = "";
+  repeats = ""; 
+  high1 = "";
+  high2 = ""; 
+  high3 = "";
+  high4 = ""; 
+  high5 = "";
+  high6 = ""; 
+  high7 = "";
+  high8 = ""; 
+  high9 = ""; 
+  high10 = "";
+  b == '0';
+
+  if (b == '0') {
+    startScreen();
+  }
+}
